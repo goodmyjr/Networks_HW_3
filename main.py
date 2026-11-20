@@ -18,7 +18,14 @@ def main():
         sys.exit(1)
 
     for port_info in open_ports:
-        print(f"{port_info['protocol']} {port_info['port']}")
+        parts = [port_info['protocol'], str(port_info['port'])]
+
+        if 'time_ms' in port_info:
+            parts.append(str(port_info['time_ms']))
+        if 'app_level_protocol' in port_info:
+            parts.append(port_info['app_level_protocol'])
+
+        print(' '.join(parts))
 
 
 if __name__ == "__main__":

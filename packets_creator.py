@@ -1,6 +1,8 @@
 import socket
 import struct
 
+_source_ip_cache = {}
+
 
 def create_tcp_syn(target_ip, source_port, dest_port):
     seq = 0
@@ -64,11 +66,19 @@ def create_tcp_rst(target_ip, source_port, dest_port):
     return tcp_header
 
 
-def _get_source_ip(target_ip): #из за проблем в wsl, изначально было просто через gethostname
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as temp_socket:
-        temp_socket.connect((target_ip, 80))
-        local_ip = temp_socket.getsockname()[0]
-    return socket.inet_aton(local_ip)
+def create_dns_query():
+    header = struct.pack('!HHHHHH', 0x1234, 0x0100, 1, 0, 0, 0)
+    question = b'\x07example\x03com\x00' + struct.pack('!HH', 1, 1)
+    return header + question
+
+
+def _get_source_ip(target_ip):
+    if target_ip not in _source_ip_cache:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as temp_socket:
+            temp_socket.connect((target_ip, 80))
+            local_ip = temp_socket.getsockname()[0]
+        _source_ip_cache[target_ip] = socket.inet_aton(local_ip)
+    return _source_ip_cache[target_ip]
 
 
 def _calculate_checksum(data):
